@@ -290,7 +290,39 @@ template MSNZB(b) {
     signal input skip_checks;
     signal output one_hot[b];
 
-    // TODO
+    if (skip_checks == 1) {
+        log("skipping checks");
+    } else {
+        log("not skipping checks");
+        assert(in != 0);
+    }
+
+    // check that `in` is at most `b` bits long
+    component check_e_bits = CheckBitLength(b);
+    check_e_bits.in <== in;
+    assert(check_e_bits.out == 1);
+
+    // convert `in` into bits
+    component in_n2b = Num2Bits(b);
+    in_n2b.in <== in;
+
+    var msnzbFounded = 0;
+    component msnzb_not_found[b];
+    for (var i = b-1; i >= 0; i--) {
+        one_hot[i] <== (1 - msnzbFounded) * in_n2b.bits[i];
+        
+        // NOT QUADRARIC = NOT WORKING (because we don't want to reveal if MSNZB is found or not)
+        // if (one_hot[i] == 1) {
+        //     msnzbFounded = 1;
+        //     log("found MSNZB at ", i);
+        // }
+
+        // QUADRARIC = WORKING
+        msnzb_not_found[i] = OR();
+        msnzb_not_found[i].a <== msnzbFounded;
+        msnzb_not_found[i].b <== in_n2b.bits[i];
+        msnzbFounded = msnzb_not_found[i].out;
+    }
 }
 
 /*
