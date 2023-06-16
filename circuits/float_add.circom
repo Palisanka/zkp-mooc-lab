@@ -213,7 +213,33 @@ template RightShift(b, shift) {
     signal input x;
     signal output y;
 
-    // TODO
+    // check that `x` is at most `b` bits long
+    component check_e_bits = CheckBitLength(b);
+    check_e_bits.in <== x;
+    assert(check_e_bits.out == 1);
+
+    // check that `shift` is at most `b` bits long
+    component check_shift_bits = CheckBitLength(b);
+    check_shift_bits.in <== shift;
+    assert(check_shift_bits.out == 1);
+
+    // shift
+    // y <-- x >> shift; // working but missing constraints
+    
+    //////////////////////////////////////////////////////////
+    //////// BETTER implementation (with constraints) ////////
+    //////////////////////////////////////////////////////////
+    component num2Bits = Num2Bits(b);
+    num2Bits.in <== x;
+    signal in_bits[b] <== num2Bits.bits;
+
+    var shifted_x = 0;
+    for (var i = 0; i < b - shift; i++) {
+        log("the value of `in_bits[i]` is : ", in_bits[i]);
+        shifted_x += 2**i * in_bits[i + shift];
+    }
+    log("the value of `shifted_x` is : ", shifted_x);
+    y <== shifted_x;
 }
 
 /*
